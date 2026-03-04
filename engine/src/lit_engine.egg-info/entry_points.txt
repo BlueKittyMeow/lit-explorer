@@ -1,2 +1,0 @@
-[console_scripts]
-lit-engine = lit_engine.cli:main
