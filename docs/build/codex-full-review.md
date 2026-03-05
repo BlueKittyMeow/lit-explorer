@@ -101,8 +101,61 @@ You are reviewing the **complete lit-explorer engine codebase** (Stages 1–4). 
 
 ### Blockers
 
+- BLOCKER [Correctness / Chapter Assignment]: Short chapters filtered by `min_chapter_words` can cause chapter range gaps, and blocks in those gaps are silently assigned to Chapter 1.
+  - `detect_chapters()` builds chapter ranges using the *next heading start* and then removes short chapters (`engine/src/lit_engine/nlp/chapter_detect.py:84-104`). After filtering, adjacent surviving chapters are no longer guaranteed contiguous.
+  - `ChaptersAnalyzer` assigns each block by midpoint and defaults to `boundaries[0].number` when no boundary contains the midpoint (`engine/src/lit_engine/analyzers/chapters.py:65-71`).
+  - Combined effect: blocks that fall inside a filtered-out chapter’s char range are mis-labeled as chapter 1 instead of nearest surviving chapter (or explicit unassigned). This is a data-integrity error in `chapters.json` and in `analysis.json` enrichment.
+
 ### Concerns
+
+- CONCERN [Architecture / Runtime Contracts]: Dependency failures do not prevent dependent analyzers from running, which can yield structurally valid but semantically degraded outputs.
+  - The CLI catches analyzer exceptions and continues (`engine/src/lit_engine/cli.py:96-111`), with failure only when *all* analyzers fail (`cli.py:118-121`).
+  - Dependent analyzers then run with missing context and fallback to empty/default values (e.g., `ReadabilityAnalyzer` uses `context["texttiling"] if context else None` and proceeds with empty blocks: `engine/src/lit_engine/analyzers/readability.py:27-29`; `ChaptersAnalyzer` similarly degrades to empty context: `engine/src/lit_engine/analyzers/chapters.py:46-57`).
+  - This behavior is resilient, but it weakens the `requires()` contract and can silently ship partial analyses without explicit “dependency missing” warnings.
+
+- CONCERN [Spec Compliance / Coupling]: `chapters` declares a hard dependency on `silence`, but silence output is not used in chapter aggregation.
+  - Dependency declaration includes `silence` (`engine/src/lit_engine/analyzers/chapters.py:20`).
+  - `silence_gaps` is read (`chapters.py:56`) but never consumed afterwards.
+  - This adds compute/coupling cost without affecting output and diverges from the stated “silence contributes to chapters” intent in `spec.md` (`spec.md:425`).
+
+- CONCERN [Test Quality]: Circular dependency test for topological sort does not actually test a cycle path.
+  - `test_circular_detection` only verifies the normal full-set order resolves (`engine/tests/test_toposort.py:34-44`), so cycle-detection logic could regress without failing this test.
+
+- CONCERN [Offset Robustness]: `locate_sentences()` fallback can produce approximate offsets without any warning channel.
+  - On mismatch, it assigns `idx = search_from` and computes `(start, end)` from sentence length (`engine/src/lit_engine/nlp/sentence_locate.py:16-23`).
+  - This is intentionally permissive, but downstream consumers (`sentiment`, `chapters`) may treat approximate boundaries as exact. The behavior is only partially tested (`engine/tests/test_sentence_locate.py:24-33`) and not validated against downstream impact.
 
 ### Suggestions
 
+- SUGGESTION [Chapter Integrity]: After min-word filtering, rebuild chapter ranges to remain contiguous across surviving chapters, or carry a “filtered chapter span” map and assign blocks explicitly instead of defaulting to chapter 1.
+  - Target modules: `engine/src/lit_engine/nlp/chapter_detect.py` and `engine/src/lit_engine/analyzers/chapters.py`.
+  - Add regression tests for “short middle chapter filtered out” ensuring no block inside that span maps to chapter 1 by default.
+
+- SUGGESTION [Dependency Policy]: Enforce runtime dependency checks before each analyzer runs.
+  - Option A: Skip analyzer when any `requires()` dependency is absent from `results`, emit explicit warning.
+  - Option B: Treat missing runtime deps as hard failure for that analyzer (or whole run when requested explicitly).
+  - Target module: `engine/src/lit_engine/cli.py`.
+
+- SUGGESTION [Silence Integration]: Either remove `silence` from `ChaptersAnalyzer.requires()` or actually aggregate silence-derived chapter metrics (e.g., chapter gap count/longest silence/avg gap words).
+  - Target module: `engine/src/lit_engine/analyzers/chapters.py`.
+
+- SUGGESTION [Test Coverage]: Replace/extend `test_circular_detection` with a true cycle fixture by monkeypatching `_REGISTRY` with temporary analyzers that mutually require each other, then assert `ValueError("Circular dependency detected ...")`.
+  - Target module: `engine/tests/test_toposort.py`.
+
 ### Praise
+
+- PRAISE [Architecture]: Registry + topological ordering is clean and maintainable, with clear fail-fast behavior for missing requested dependencies.
+  - `Analyzer`/`AnalyzerResult` abstraction and registry API are minimal and coherent (`engine/src/lit_engine/analyzers/__init__.py:7-68`).
+  - Kahn-based execution ordering and dependency validation are straightforward and deterministic (`analyzers/__init__.py:71-127`).
+
+- PRAISE [Data Contract Discipline]: Output routing in CLI preserves schema boundaries (e.g., `characters.json` writes only the `characters` object; `chapters.json` omits internal `block_to_chapter` map), while keeping richer internal context for enrichment.
+  - `engine/src/lit_engine/cli.py:155-165`.
+
+- PRAISE [Text Boundary Engineering]: The TextTiling pipeline (`prepare_text` -> `map_tile_offsets` -> `build_blocks`) is thoughtfully constructed for block-level reproducibility, including fallback warnings and contiguous block semantics.
+  - `engine/src/lit_engine/analyzers/texttiling.py:35-121, 124-240`.
+
+- PRAISE [CLI Reliability Improvements]: Stage 4 hardening is present and correct: `extract` unpacking fix, all-fail nonzero exit, deterministic dependency expansion ordering, and clarified rerun semantics.
+  - `engine/src/lit_engine/cli.py:118-121, 235, 315-335, 348-352`.
+
+- PRAISE [Regression Coverage Breadth]: The suite covers schema, fallback, CLI integration, and manuscript-level e2e paths, including recent stage-specific regressions.
+  - Representative files: `engine/tests/test_cli_stage3.py`, `engine/tests/test_cli_stage4.py`, `engine/tests/test_extract.py`, `engine/tests/test_specimen_e2e.py`.

@@ -51,7 +51,7 @@ class TestExpandWithDeps:
     def test_transitive_deps(self):
         """chapters expands to include all transitive deps."""
         result = _expand_with_deps("chapters")
-        expected = {"texttiling", "agency", "dialogue", "sentiment", "silence", "chapters"}
+        expected = {"texttiling", "agency", "dialogue", "sentiment", "chapters"}
         assert set(result) == expected
 
     def test_unknown_analyzer_raises(self):

@@ -96,6 +96,26 @@ class TestDetectChapters:
         assert 3 in numbers
         assert 2 not in numbers
 
+    def test_filtered_chapters_remain_contiguous(self):
+        """After filtering a short middle chapter, ranges stay contiguous."""
+        text = (
+            "\n"
+            "Chapter 1 - Real Chapter\n"
+            + ("Word " * 200) + "\n"
+            "\n"
+            "Chapter 2 - Too Short\n"
+            "Only a few words here.\n"
+            "\n"
+            "Chapter 3 - Also Real\n"
+            + ("Word " * 200) + "\n"
+        )
+        chapters = detect_chapters(text, min_chapter_words=100)
+        assert len(chapters) == 2
+        # Chapter 1 should extend to Chapter 3's start (no gap)
+        assert chapters[0].end_char == chapters[1].start_char
+        # Chapter 3 extends to end of text
+        assert chapters[1].end_char == len(text)
+
     def test_chapter_without_title(self):
         """Chapter heading without dash/title extracts empty title."""
         text = (

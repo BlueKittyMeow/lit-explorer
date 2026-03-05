@@ -1,5 +1,7 @@
 """Chapters analyzer — chapter boundary detection and per-chapter aggregation."""
 
+from collections import Counter
+
 import textstat
 from nltk.tokenize import sent_tokenize, word_tokenize
 
@@ -17,7 +19,7 @@ class ChaptersAnalyzer(Analyzer):
     description = "Chapter boundary detection and per-chapter metric aggregation"
 
     def requires(self) -> list[str]:
-        return ["texttiling", "agency", "dialogue", "sentiment", "silence"]
+        return ["texttiling", "agency", "dialogue", "sentiment"]
 
     def analyze(
         self,
@@ -47,13 +49,10 @@ class ChaptersAnalyzer(Analyzer):
         agency_result = context.get("agency") if context else None
         dialogue_result = context.get("dialogue") if context else None
         sentiment_result = context.get("sentiment") if context else None
-        silence_result = context.get("silence") if context else None
-
         blocks = tt_result.data.get("blocks", []) if tt_result else []
         character_list = agency_result.data.get("character_list", []) if agency_result else []
         dialogue_spans = dialogue_result.data.get("spans", []) if dialogue_result else []
         sentiment_arc = sentiment_result.data.get("arc", []) if sentiment_result else []
-        silence_gaps = silence_result.data.get("gaps", []) if silence_result else []
 
         # Pre-compute sentiment sentence offsets for chapter averaging
         sentences = sent_tokenize(text)
@@ -118,10 +117,10 @@ class ChaptersAnalyzer(Analyzer):
             dialogue_ratio = round(ch_dialogue_words / word_count, 3) if word_count > 0 else 0.0
 
             # Character mentions (token-level, case-insensitive)
-            ch_tokens = [w.lower() for w in word_tokenize(ch_text)]
+            ch_token_counts = Counter(w.lower() for w in word_tokenize(ch_text))
             character_mentions: dict[str, int] = {}
             for name in character_list:
-                character_mentions[name] = ch_tokens.count(name.lower())
+                character_mentions[name] = ch_token_counts.get(name.lower(), 0)
 
             # Dominant character
             if character_mentions:

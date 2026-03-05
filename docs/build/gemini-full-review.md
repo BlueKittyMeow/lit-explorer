@@ -2,7 +2,7 @@
 
 ## Evaluation Summary
 
-The **lit-explorer** engine is a robust, well-architected computational stylistics toolkit. The implementation successfully transitions a set of standalone research scripts into a modular, testable, and extensible Python package. With 217 passing tests and a successful end-to-end validation against *The Specimen*, the codebase demonstrates high technical maturity and adherence to the project specification.
+The **lit-explorer** engine is a robust, well-architected computational stylistics toolkit. This adversarial review confirms that the core logic is sound, but identifies a few subtle risks in character mention counting and boundary heuristics that may manifest on extremely large or unusually formatted manuscripts.
 
 ---
 
@@ -10,54 +10,30 @@ The **lit-explorer** engine is a robust, well-architected computational stylisti
 
 ### 1. Correctness & Data Integrity
 
-- 🟢 **PRAISE**: **Deterministic Offset Mapping** (`texttiling.py`). The use of an `offset_map` built during text preparation is a superior solution to fuzzy matching. It ensures 100% accuracy for the "Click to Read" feature.
-- 🟢 **PRAISE**: **Dialogue Continuation** (`dialogue_extract.py`). The algorithm correctly handles multi-paragraph dialogue (opening quote continuation), which is a critical requirement for literary prose.
-- 🟡 **CONCERN**: **Sentence Location Fallback** (`sentence_locate.py:16`). The fallback to `idx = search_from` when `text.find()` fails is a safe guard against tokenizer whitespace normalization, but it could theoretically lead to drifted offsets if many consecutive sentences fail to match exactly. 
-    - *Mitigation*: The current `nltk.sent_tokenize` usage combined with `lstrip("\uFEFF")` minimizes this risk.
-- ℹ️ **NOTE**: **Block-to-Chapter Assignment** (`chapters.py:56`). Using the midpoint of a block (`block_mid`) to assign it to a chapter is a sensible heuristic for semantic segments that might occasionally straddle a boundary.
+- 🟢 **PRAISE**: **Deterministic Offset Mapping** (`texttiling.py`). The use of an `offset_map` ensures 100% accuracy for character-level data retrieval in the frontend.
+- 🟡 **CONCERN**: **Midpoint Heuristic for Block Assignment** (`chapters.py:65`). Assigning a block to a chapter based on its midpoint (`block_mid`) is generally safe, but if a very short chapter (e.g., a 1-paragraph prologue) ends exactly at a block boundary, the block might be "pulled" into the wrong chapter.
+- 🟡 **CONCERN**: **Sentence Location Fallback** (`sentence_locate.py:16`). If a tokenizer normalizes whitespace heavily (e.g., converting multiple newlines to one), `text.find()` will fail and the scanner will fallback to `idx = search_from`. While safe, this could lead to slight offset "compression" if many sentences fail to match exactly.
 
-### 2. Spec Compliance
+### 2. Performance & Scalability
 
-- 🟢 **PRAISE**: **Schema Fidelity**. The output JSON files (`analysis.json`, `characters.json`, `chapters.json`, `sentiment.json`, `manifest.json`) strictly follow the `spec.md` definitions, ensuring seamless integration with the SvelteKit explorer.
-- ℹ️ **NOTE**: **Additive Deviations**. The implementation includes several useful fields not explicitly in the spec:
-    - `sentiment.json`: Added `neu` score and `smoothed_arc`.
-    - `analysis.json`: Added `pacing` top-level key.
-    - `manifest.json`: Added `warnings` list for improved observability.
-- 🟢 **PRAISE**: **CLI Parity**. All commands (`analyze`, `extract`, `rerun`, `list-analyzers`) implemented in Stage 4 match the functional requirements in `spec.md`.
+- 🟡 **CONCERN**: **Quadratic Mention Counting** (`chapters.py:112-115`). Inside the chapter loop, the code calls `ch_tokens.count(name)` for every character. For a manuscript with 50 chapters and 20 detected characters, this results in 1,000 full-chapter token scans. 
+    - *Impact*: Negligible for *The Specimen*, but could become slow for very long novels with many minor characters.
+    - *Recommendation*: Use a single `Counter(ch_tokens)` pass per chapter.
+- 🟡 **CONCERN**: **Memory Footprint** (`loader.py`). The use of `en_core_web_lg` (~500MB) plus the large spaCy Doc object (~2-3x text size) remains the primary resource constraint for deployment.
 
-### 3. Architecture & Design
+### 3. Architecture & Robustness
 
-- 🟢 **PRAISE**: **Plugin Pattern** (`analyzers/__init__.py`). The `@register` decorator and `_REGISTRY` pattern make adding new analyzers trivial and keep the core engine decoupled from specific analysis logic.
-- 🟢 **PRAISE**: **Topological Pipeline** (`cli.py`). Orchestrating analyzers via Kahn's algorithm (`resolve_execution_order`) ensures that data dependencies (like `chapters` requiring `sentiment`) are always satisfied without hardcoded ordering.
-- 🟢 **PRAISE**: **Enrichment Pipeline** (`cli.py:115-132`). Centralizing the "joining" of data (e.g., merging readability metrics into blocks) in the CLI rather than within analyzers prevents circular dependencies and keeps analyzer code "pure."
+- 🟢 **PRAISE**: **Plugin Registry** (`analyzers/__init__.py`). The topological sorting of the analyzer pipeline is excellent and handles transitive dependencies perfectly for the `rerun` command.
+- 🟢 **PRAISE**: **Resilient Enrichment** (`cli.py`). The pipeline handles failed analyzers gracefully by checking for result presence before enrichment or output writing.
+- 🟡 **CONCERN**: **Dialogue Scanner Nesting** (`dialogue_extract.py:68-120`). The current scanner is linear and priority-based. While it handles continued dialogue, it does not use a stack for nesting. This means `'He said, "Hello," and waved.'` works, but a more complex nesting of different quote types might lead to premature termination of the outer span.
 
-### 4. NLP & Performance
+### 4. Code Quality & Security
 
-- 🟢 **PRAISE**: **Lazy Resource Loading** (`loader.py`). The LRU-cached spaCy loader prevents redundant 500MB model loads, which is vital for the `rerun` command performance.
-- ℹ️ **NOTE**: **Resource Reuse**. `PacingAnalyzer` reuses `sentence_lengths` from the `texttiling` context, and `ChaptersAnalyzer` reuses the `sentiment_arc`, demonstrating efficient data flow.
-- 🟡 **CONCERN**: **Memory Footprint**. While `nlp.max_length` is handled correctly, parsing a 300k+ character manuscript with `en_core_web_lg` still consumes significant RAM (~1GB+). 
-    - *Suggestion*: For production deployment in low-memory environments, consider adding a CLI flag to force `en_core_web_sm`.
-
-### 5. Error Handling & Robustness
-
-- 🟢 **PRAISE**: **Resilient Analyzer Loop** (`cli.py:102-107`). The `try/except Exception` block ensures that a single analyzer failure (e.g., a regex crash in `chapters`) does not abort the entire pipeline, and the error is persisted to the manifest.
-- 🟢 **PRAISE**: **Graceful Fallbacks** (`texttiling.py:185`). The two-tier fallback for TextTiling window parameters ensures that even short or unusually formatted texts produce usable segments.
-- 🟢 **PRAISE**: **Unicode Robustness**. Explicit handling of BOM (`\uFEFF`), smart quotes, and non-ASCII characters throughout the NLP utilities prevents the "offset drift" common in v1 NLP tools.
-
-### 6. Test Quality
-
-- 🟢 **PRAISE**: **Comprehensive Coverage**. 217 tests covering unit, integration, and end-to-end scenarios provide exceptional confidence.
-- 🟢 **PRAISE**: **E2E Validation** (`test_specimen_e2e.py`). Testing against the actual target manuscript ensures that the heuristic thresholds (like `min_chapter_words`) are tuned correctly for real-world data.
-- 🟢 **PRAISE**: **Synthetic Fixtures**. The use of synthetic spaCy Docs in unit tests (`test_coref.py`, `test_auto_detect.py`) ensures tests are fast and deterministic.
-
-### 7. Code Quality & Security
-
-- 🟢 **PRAISE**: **Slugification** (`json_export.py:58`). The robust `slugify` function prevents path traversal and ensures URL-safe directory naming.
-- 🟢 **PRAISE**: **Maintainability**. Functions are generally short, single-purpose, and well-documented with docstrings and type hints.
-- ℹ️ **NOTE**: **Consistency**. Naming conventions are consistent across the codebase (snake_case for functions/variables, PascalCase for classes).
+- 🟢 **PRAISE**: **Safe Slugification** (`json_export.py:58`). Prevents path traversal and ensures valid directory names.
+- 🟢 **PRAISE**: **Refactoring Fidelity**. The implementation successfully modularizes the original logic from `specimen_analysis_v2.py` without losing the nuanced metrics Lara depends on.
 
 ---
 
 ## Conclusion
 
-The **lit-explorer** engine is a high-quality implementation that exceeds the requirements of a prototype. It provides a solid, extensible foundation for the upcoming SvelteKit Explorer phase. No critical blockers remain.
+The engine is production-ready for the Explorer phase. The identified concerns are "at-scale" edge cases that do not impact the primary use case or the validation against *The Specimen*.

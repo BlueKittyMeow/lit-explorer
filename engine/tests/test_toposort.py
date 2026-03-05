@@ -1,8 +1,9 @@
 """Tests for analyzer execution order resolution (topological sort)."""
 
 import pytest
+from unittest.mock import patch
 
-from lit_engine.analyzers import resolve_execution_order
+from lit_engine.analyzers import Analyzer, AnalyzerResult, resolve_execution_order, _REGISTRY
 
 
 class TestResolveExecutionOrder:
@@ -11,14 +12,16 @@ class TestResolveExecutionOrder:
         order = resolve_execution_order(["silence", "dialogue"])
         assert order.index("dialogue") < order.index("silence")
 
-    def test_chapters_last(self):
-        """Chapters (with most deps) comes last in full set."""
+    def test_chapters_after_deps(self):
+        """Chapters comes after all its dependencies."""
         all_names = [
             "texttiling", "agency", "dialogue", "readability",
             "pacing", "sentiment", "silence", "chapters",
         ]
         order = resolve_execution_order(all_names)
-        assert order[-1] == "chapters"
+        ch_idx = order.index("chapters")
+        for dep in ["texttiling", "agency", "dialogue", "sentiment"]:
+            assert order.index(dep) < ch_idx, f"{dep} should come before chapters"
 
     def test_independent_analyzers(self):
         """Independent analyzers can appear in any order (but all present)."""
@@ -33,9 +36,30 @@ class TestResolveExecutionOrder:
 
     def test_circular_detection(self):
         """Circular dependencies raise ValueError."""
-        # This tests the algorithm itself — real analyzers don't have cycles.
-        # We can't easily inject circular deps without mocking, so this
-        # tests that the full set resolves without error (no false cycles).
+
+        class FakeA(Analyzer):
+            name = "_cycle_a"
+            description = "test"
+            def requires(self):
+                return ["_cycle_b"]
+            def analyze(self, text, config, context=None):
+                return AnalyzerResult(analyzer_name=self.name, data={})
+
+        class FakeB(Analyzer):
+            name = "_cycle_b"
+            description = "test"
+            def requires(self):
+                return ["_cycle_a"]
+            def analyze(self, text, config, context=None):
+                return AnalyzerResult(analyzer_name=self.name, data={})
+
+        patched = {**_REGISTRY, "_cycle_a": FakeA, "_cycle_b": FakeB}
+        with patch.dict("lit_engine.analyzers._REGISTRY", patched):
+            with pytest.raises(ValueError, match="Circular dependency"):
+                resolve_execution_order(["_cycle_a", "_cycle_b"])
+
+    def test_full_set_resolves(self):
+        """Full analyzer set resolves without false cycle detection."""
         all_names = [
             "texttiling", "agency", "dialogue", "readability",
             "pacing", "sentiment", "silence", "chapters",
@@ -50,4 +74,3 @@ class TestResolveExecutionOrder:
             "agency", "chapters",
         ])
         assert order.index("dialogue") < order.index("silence")
-        assert order.index("silence") < order.index("chapters")

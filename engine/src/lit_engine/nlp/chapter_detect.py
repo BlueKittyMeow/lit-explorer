@@ -103,4 +103,13 @@ def detect_chapters(
             if len(text[ch.start_char:ch.end_char].split()) >= min_chapter_words
         ]
 
+    # Rebuild contiguous ranges so surviving chapters cover the full text.
+    # After filtering, gaps can appear where short chapters were removed.
+    # Each surviving chapter expands to reach the next surviving chapter's start.
+    for i in range(len(chapters)):
+        if i + 1 < len(chapters):
+            chapters[i].end_char = chapters[i + 1].start_char
+        else:
+            chapters[i].end_char = len(text)
+
     return chapters
