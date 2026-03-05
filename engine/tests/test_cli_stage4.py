@@ -171,6 +171,23 @@ class TestAnalyzerErrorHandling:
             # sentiment should still run (no dependency on dialogue)
             assert os.path.exists(os.path.join(out_dir, "sentiment.json"))
 
+    def test_all_analyzers_fail_exits_nonzero(self, txt_file):
+        """Exit code 1 when every requested analyzer fails."""
+        runner = CliRunner()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            out_dir = os.path.join(tmpdir, "output")
+            with patch(
+                "lit_engine.analyzers.texttiling.TextTilingAnalyzer.analyze",
+                side_effect=RuntimeError("total failure"),
+            ):
+                result = runner.invoke(main, [
+                    "analyze", txt_file,
+                    "--output", out_dir,
+                    "--only", "texttiling",
+                ])
+            assert result.exit_code != 0
+            assert "All analyzers failed" in result.output
+
     def test_error_message_printed(self, txt_file):
         """Error message appears in CLI output."""
         runner = CliRunner()

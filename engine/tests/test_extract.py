@@ -143,6 +143,57 @@ class TestExtractCommand:
         assert "text" in s
         assert s["index"] == 1
 
+    def test_extract_analyze_boundary_equivalence(self, txt_file):
+        """Extract block text must match the block boundaries from analyze."""
+        runner = CliRunner()
+        with tempfile.TemporaryDirectory() as out_dir:
+            # Run analyze to get analysis.json
+            result = runner.invoke(main, [
+                "analyze", txt_file, "-o", out_dir,
+                "--tt-window", "20", "--tt-smoothing", "10",
+                "--only", "texttiling",
+            ])
+            assert result.exit_code == 0, f"analyze failed: {result.output}"
+
+            with open(os.path.join(out_dir, "analysis.json"), "r") as f:
+                analysis = json.load(f)
+
+            blocks = analysis["blocks"]
+            assert len(blocks) >= 2, "Need at least 2 blocks for meaningful test"
+
+            # Read the manuscript text the same way the CLI does
+            with open(os.path.join(out_dir, "manuscript.txt"), "r") as f:
+                ms_text = f.read().lstrip("\uFEFF")
+
+            # Check block 1 and last block via extract --json
+            for block_id in [1, len(blocks)]:
+                ext_result = runner.invoke(main, [
+                    "extract", txt_file, "--block", str(block_id), "--json",
+                    "--tt-window", "20", "--tt-smoothing", "10",
+                ])
+                assert ext_result.exit_code == 0, f"extract block {block_id} failed"
+                ext_data = json.loads(ext_result.output)
+
+                # Block ID must match
+                assert ext_data["block_id"] == block_id
+
+                # Total blocks must agree
+                assert ext_data["total_blocks"] == len(blocks)
+
+                # Word count from extract must match analysis.json block
+                analysis_block = blocks[block_id - 1]
+                assert ext_data["word_count"] == analysis_block["word_count"], (
+                    f"Block {block_id}: extract word_count={ext_data['word_count']} "
+                    f"!= analysis word_count={analysis_block['word_count']}"
+                )
+
+                # Extracted text must match manuscript at analysis.json offsets
+                expected_text = ms_text[analysis_block["start_char"]:analysis_block["end_char"]]
+                assert ext_data["text"] == expected_text, (
+                    f"Block {block_id}: extracted text does not match "
+                    f"manuscript[{analysis_block['start_char']}:{analysis_block['end_char']}]"
+                )
+
     def test_extract_custom_parameters(self, txt_file):
         """Custom --tt-window and --tt-smoothing are reflected in JSON output."""
         runner = CliRunner()

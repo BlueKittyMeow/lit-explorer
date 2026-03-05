@@ -115,6 +115,11 @@ def analyze(file_path, output, title, only, tt_window, tt_smoothing, characters)
                 click.echo(f"    WARNING: {w}")
             all_warnings.extend(result.warnings)
 
+    # Fail if no analyzers succeeded
+    if analyzer_names and not results:
+        click.echo("ERROR: All analyzers failed.", err=True)
+        raise SystemExit(1)
+
     # --- Enrichment pipeline ---
 
     # 1. Apply readability enrichment to texttiling blocks
@@ -227,7 +232,7 @@ def extract(file_path, block, tt_window, tt_smoothing, output_json):
     text = text.lstrip("\uFEFF")
 
     # Prepare and tile
-    formatted, clean, offset_map = prepare_text(text)
+    clean, formatted, offset_map = prepare_text(text)
 
     config = merge_config({
         "texttiling_w": tt_window,
@@ -312,20 +317,22 @@ def _expand_with_deps(analyzer_name: str) -> list[str]:
     if analyzer_name not in _REGISTRY:
         raise click.ClickException(f"Unknown analyzer: {analyzer_name!r}")
 
-    needed: set[str] = set()
+    seen: set[str] = set()
+    order: list[str] = []
     queue = [analyzer_name]
     while queue:
         name = queue.pop(0)
-        if name in needed:
+        if name in seen:
             continue
-        needed.add(name)
+        seen.add(name)
+        order.append(name)
         if name in _REGISTRY:
             inst = _REGISTRY[name]()
             for dep in inst.requires():
-                if dep not in needed:
+                if dep not in seen:
                     queue.append(dep)
 
-    return list(needed)
+    return order
 
 
 @main.command()
@@ -338,7 +345,12 @@ def _expand_with_deps(analyzer_name: str) -> list[str]:
 @click.option("--characters", default=None, help="Comma-separated character names")
 @click.pass_context
 def rerun(ctx, analyzer_name, file_path, output, title, tt_window, tt_smoothing, characters):
-    """Re-run a single analyzer (with its dependencies)."""
+    """Re-run a single analyzer (with its dependencies).
+
+    Expands transitive dependencies and delegates to `analyze`. This performs
+    a fresh partial recompute — output files and manifest reflect only the
+    rerun subset, not a merge with prior results.
+    """
     expanded = _expand_with_deps(analyzer_name)
     only_str = ",".join(expanded)
     ctx.invoke(

@@ -353,7 +353,7 @@ lit-engine analyze manuscript.txt --only texttiling,agency
 # Custom TextTiling parameters
 lit-engine analyze manuscript.txt --tt-window 40 --tt-smoothing 20
 
-# Re-run a single analyzer (keeps existing results)
+# Re-run a single analyzer (partial recompute with transitive deps)
 lit-engine rerun agency manuscript.txt --output ./shared/analyses/the-specimen/
 
 # List available analyzers
