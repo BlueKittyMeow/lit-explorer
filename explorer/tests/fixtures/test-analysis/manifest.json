@@ -1,0 +1,21 @@
+{
+	"title": "Test Manuscript",
+	"slug": "test-analysis",
+	"source_file": "test_manuscript.txt",
+	"analyzed_at": "2026-03-05T12:00:00Z",
+	"engine_version": "0.1.0",
+	"word_count": 5000,
+	"char_count": 28000,
+	"chapter_count": 2,
+	"character_list": ["emil", "felix"],
+	"analyzers_run": [
+		"texttiling", "agency", "dialogue", "readability",
+		"pacing", "sentiment", "silence", "chapters"
+	],
+	"parameters": {
+		"texttiling_w": 40,
+		"texttiling_k": 20,
+		"mattr_window": 50
+	},
+	"warnings": []
+}

@@ -1,0 +1,175 @@
+/**
+ * Tests for the data loading layer ($lib/server/data.ts).
+ *
+ * These tests use the fixture data in tests/fixtures/test-analysis/
+ * and set ANALYSES_DIR to point at the fixtures directory.
+ */
+
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { resolve } from 'node:path';
+
+const FIXTURES_DIR = resolve(import.meta.dirname, '..', 'fixtures');
+
+// Point the data loader at our fixtures
+beforeAll(() => {
+	process.env.ANALYSES_DIR = FIXTURES_DIR;
+});
+
+afterAll(() => {
+	delete process.env.ANALYSES_DIR;
+});
+
+// Dynamic import after env is set, so the loader picks up the fixture path
+async function getLoaders() {
+	return await import('../../src/lib/server/data.js');
+}
+
+describe('listAnalyses', () => {
+	it('returns summaries from fixture directory', async () => {
+		const { listAnalyses } = await getLoaders();
+		const list = await listAnalyses();
+		expect(list).toHaveLength(1);
+		expect(list[0].slug).toBe('test-analysis');
+		expect(list[0].title).toBe('Test Manuscript');
+		expect(list[0].word_count).toBe(5000);
+		expect(list[0].chapter_count).toBe(2);
+		expect(list[0].character_list).toEqual(['emil', 'felix']);
+		expect(list[0].analyzers_run).toHaveLength(8);
+	});
+
+	it('returns empty array for nonexistent directory', async () => {
+		const origDir = process.env.ANALYSES_DIR;
+		process.env.ANALYSES_DIR = '/tmp/nonexistent-lit-explorer-test';
+		try {
+			const { listAnalyses } = await getLoaders();
+			const list = await listAnalyses();
+			expect(list).toEqual([]);
+		} finally {
+			process.env.ANALYSES_DIR = origDir;
+		}
+	});
+});
+
+describe('loadManifest', () => {
+	it('returns typed manifest with warnings field', async () => {
+		const { loadManifest } = await getLoaders();
+		const manifest = await loadManifest('test-analysis');
+		expect(manifest.title).toBe('Test Manuscript');
+		expect(manifest.slug).toBe('test-analysis');
+		expect(manifest.warnings).toEqual([]);
+		expect(manifest.engine_version).toBe('0.1.0');
+	});
+
+	it('throws 404 for missing slug', async () => {
+		const { loadManifest } = await getLoaders();
+		await expect(loadManifest('nonexistent')).rejects.toThrow();
+	});
+});
+
+describe('loadAllData', () => {
+	it('returns complete AnalysisData object', async () => {
+		const { loadAllData } = await getLoaders();
+		const data = await loadAllData('test-analysis');
+
+		// Manifest
+		expect(data.manifest.title).toBe('Test Manuscript');
+
+		// Analysis
+		expect(data.analysis.total_blocks).toBe(5);
+		expect(data.analysis.blocks).toHaveLength(5);
+		expect(data.analysis.blocks[0].metrics.coleman_liau).toBe(10.2);
+		expect(data.analysis.blocks[0].chapter).toBe(1);
+		expect(data.analysis.pacing).toBeDefined();
+		expect(data.analysis.pacing!.sentence_count).toBe(45);
+
+		// Characters
+		expect(Object.keys(data.characters.characters)).toEqual(['emil', 'felix']);
+		expect(data.characters.characters.emil.total_verbs).toBe(120);
+
+		// Chapters
+		expect(data.chapters.chapters).toHaveLength(2);
+		expect(data.chapters.chapters[0].title).toBe('Café Union');
+
+		// Sentiment
+		expect(data.sentiment.arc).toHaveLength(10);
+		expect(data.sentiment.arc[0].neu).toBe(0.90);
+		expect(data.sentiment.smoothed_arc).toHaveLength(3);
+		expect(data.sentiment.extremes.most_positive).not.toBeNull();
+		expect(data.sentiment.extremes.most_negative!.score).toBe(-0.55);
+	});
+});
+
+describe('loadAnalysis', () => {
+	it('loads analysis with pacing data', async () => {
+		const { loadAnalysis } = await getLoaders();
+		const analysis = await loadAnalysis('test-analysis');
+		expect(analysis.total_blocks).toBe(5);
+		expect(analysis.notable.longest_sentences).toEqual([1, 3]);
+		expect(analysis.pacing?.distribution.mean).toBe(18.3);
+	});
+});
+
+describe('loadCharacters', () => {
+	it('loads character profiles', async () => {
+		const { loadCharacters } = await getLoaders();
+		const chars = await loadCharacters('test-analysis');
+		expect(chars.characters.felix.verb_domains.cognition).toBe(18);
+	});
+});
+
+describe('loadChapters', () => {
+	it('loads chapters without block_to_chapter', async () => {
+		const { loadChapters } = await getLoaders();
+		const chapters = await loadChapters('test-analysis');
+		expect(chapters.chapters).toHaveLength(2);
+		expect(chapters.chapters[0].sentiment.neu).toBe(0.88);
+		// block_to_chapter is NOT in the file
+		expect((chapters as unknown as Record<string, unknown>).block_to_chapter).toBeUndefined();
+	});
+});
+
+describe('loadSentiment', () => {
+	it('loads sentiment with smoothed_arc', async () => {
+		const { loadSentiment } = await getLoaders();
+		const sentiment = await loadSentiment('test-analysis');
+		expect(sentiment.method).toBe('vader');
+		expect(sentiment.smoothed_arc).toHaveLength(3);
+		expect(sentiment.arc[0].neu).toBe(0.90);
+	});
+});
+
+describe('path traversal guard', () => {
+	it('rejects slug with ..', async () => {
+		const { loadManifest } = await getLoaders();
+		await expect(loadManifest('../etc/passwd')).rejects.toThrow();
+	});
+
+	it('rejects slug with /', async () => {
+		const { loadManifest } = await getLoaders();
+		await expect(loadManifest('foo/bar')).rejects.toThrow();
+	});
+
+	it('rejects slug starting with hyphen', async () => {
+		const { loadManifest } = await getLoaders();
+		await expect(loadManifest('-bad-slug')).rejects.toThrow();
+	});
+
+	it('rejects slug with uppercase', async () => {
+		const { loadManifest } = await getLoaders();
+		await expect(loadManifest('BadSlug')).rejects.toThrow();
+	});
+
+	it('rejects encoded traversal', async () => {
+		const { loadManifest } = await getLoaders();
+		await expect(loadManifest('%2e%2e')).rejects.toThrow();
+	});
+});
+
+describe('slug from accented title', () => {
+	it('loads fixture with accented chapter title correctly', async () => {
+		const { loadChapters } = await getLoaders();
+		const chapters = await loadChapters('test-analysis');
+		// The chapter title contains an accent (Café Union)
+		expect(chapters.chapters[0].title).toBe('Café Union');
+	});
+});

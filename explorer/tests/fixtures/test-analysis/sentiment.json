@@ -1,0 +1,29 @@
+{
+	"method": "vader",
+	"granularity": "sentence",
+	"arc": [
+		{ "position": 0.0, "compound": 0.15, "pos": 0.08, "neg": 0.02, "neu": 0.90 },
+		{ "position": 0.1, "compound": -0.34, "pos": 0.01, "neg": 0.12, "neu": 0.87 },
+		{ "position": 0.2, "compound": 0.05, "pos": 0.05, "neg": 0.03, "neu": 0.92 },
+		{ "position": 0.3, "compound": 0.42, "pos": 0.15, "neg": 0.01, "neu": 0.84 },
+		{ "position": 0.4, "compound": -0.12, "pos": 0.03, "neg": 0.08, "neu": 0.89 },
+		{ "position": 0.5, "compound": 0.28, "pos": 0.10, "neg": 0.02, "neu": 0.88 },
+		{ "position": 0.6, "compound": -0.55, "pos": 0.01, "neg": 0.18, "neu": 0.81 },
+		{ "position": 0.7, "compound": 0.08, "pos": 0.06, "neg": 0.04, "neu": 0.90 },
+		{ "position": 0.8, "compound": -0.20, "pos": 0.02, "neg": 0.10, "neu": 0.88 },
+		{ "position": 1.0, "compound": 0.35, "pos": 0.12, "neg": 0.01, "neu": 0.87 }
+	],
+	"smoothed_arc": [
+		{ "position": 0.0, "compound": 0.15 },
+		{ "position": 0.5, "compound": 0.28 },
+		{ "position": 1.0, "compound": 0.35 }
+	],
+	"chapter_averages": [
+		{ "chapter": 1, "compound": 0.12 },
+		{ "chapter": 2, "compound": -0.05 }
+	],
+	"extremes": {
+		"most_positive": { "position": 0.3, "text_preview": "The morning light filled the room with warmth...", "score": 0.42 },
+		"most_negative": { "position": 0.6, "text_preview": "The silence was absolute and terrible...", "score": -0.55 }
+	}
+}

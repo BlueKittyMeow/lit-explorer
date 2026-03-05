@@ -1,0 +1,54 @@
+{
+	"characters": {
+		"emil": {
+			"total_verbs": 120,
+			"active_count": 115,
+			"passive_count": 5,
+			"intransitive_count": 60,
+			"via_name": 45,
+			"via_pronoun": 75,
+			"verb_domains": {
+				"perception": 20, "cognition": 15, "motion": 18,
+				"physical_action": 22, "gesture": 10, "emotion": 8,
+				"speech": 5, "other": 22
+			},
+			"top_verbs": [
+				{ "verb": "see", "count": 12, "category": "perception" },
+				{ "verb": "walk", "count": 8, "category": "motion" }
+			],
+			"top_actions": [
+				{ "action": "shake -> head", "count": 3 }
+			],
+			"passive_verbs": [
+				{ "verb": "make", "count": 2 }
+			],
+			"passive_agents": [
+				{ "agent": "darkness", "count": 1 }
+			]
+		},
+		"felix": {
+			"total_verbs": 95,
+			"active_count": 90,
+			"passive_count": 5,
+			"intransitive_count": 45,
+			"via_name": 35,
+			"via_pronoun": 60,
+			"verb_domains": {
+				"perception": 12, "cognition": 18, "motion": 10,
+				"physical_action": 15, "gesture": 8, "emotion": 12,
+				"speech": 8, "other": 12
+			},
+			"top_verbs": [
+				{ "verb": "think", "count": 10, "category": "cognition" },
+				{ "verb": "say", "count": 6, "category": "speech" }
+			],
+			"top_actions": [
+				{ "action": "close -> eyes", "count": 2 }
+			],
+			"passive_verbs": [
+				{ "verb": "tell", "count": 2 }
+			],
+			"passive_agents": []
+		}
+	}
+}

@@ -1,0 +1,84 @@
+{
+	"parameters": { "w": 40, "k": 20, "mattr_window": 50 },
+	"total_blocks": 5,
+	"blocks": [
+		{
+			"id": 1, "tile_index": 0, "start_char": 0, "end_char": 1000,
+			"word_count": 160, "sentence_count": 8,
+			"metrics": {
+				"mattr": 0.812, "avg_sentence_length": 20.0, "max_sentence_length": 45,
+				"flesch_ease": 65.2, "flesch_grade": 9.1, "gunning_fog": 11.3,
+				"coleman_liau": 10.2, "smog": 9.8, "ari": 10.5
+			},
+			"sentence_lengths": [20, 15, 45, 12, 18, 22, 30, 8],
+			"preview": "When lights were paling one by one...",
+			"chapter": 1
+		},
+		{
+			"id": 2, "tile_index": 1, "start_char": 1000, "end_char": 2100,
+			"word_count": 180, "sentence_count": 10,
+			"metrics": {
+				"mattr": 0.795, "avg_sentence_length": 18.0, "max_sentence_length": 38,
+				"flesch_ease": 70.1, "flesch_grade": 8.2, "gunning_fog": 9.8,
+				"coleman_liau": 9.1, "smog": 8.5, "ari": 9.0
+			},
+			"sentence_lengths": [18, 22, 14, 20, 38, 10, 16, 24, 12, 6],
+			"preview": "Emil walked to the window and paused...",
+			"chapter": 1
+		},
+		{
+			"id": 3, "tile_index": 2, "start_char": 2100, "end_char": 3200,
+			"word_count": 170, "sentence_count": 9,
+			"metrics": {
+				"mattr": 0.780, "avg_sentence_length": 18.9, "max_sentence_length": 40,
+				"flesch_ease": 68.5, "flesch_grade": 8.8, "gunning_fog": 10.5,
+				"coleman_liau": 9.8, "smog": 9.2, "ari": 9.7
+			},
+			"sentence_lengths": [19, 25, 14, 40, 10, 18, 22, 15, 7],
+			"preview": "Felix sat at the table absorbed in thought...",
+			"chapter": 1
+		},
+		{
+			"id": 4, "tile_index": 3, "start_char": 3200, "end_char": 4300,
+			"word_count": 190, "sentence_count": 11,
+			"metrics": {
+				"mattr": 0.835, "avg_sentence_length": 17.3, "max_sentence_length": 35,
+				"flesch_ease": 72.0, "flesch_grade": 7.9, "gunning_fog": 9.2,
+				"coleman_liau": 8.5, "smog": 8.0, "ari": 8.3
+			},
+			"sentence_lengths": [17, 20, 12, 35, 8, 22, 15, 18, 25, 10, 8],
+			"preview": "Clara entered the hall and looked around...",
+			"chapter": 2
+		},
+		{
+			"id": 5, "tile_index": 4, "start_char": 4300, "end_char": 5000,
+			"word_count": 120, "sentence_count": 7,
+			"metrics": {
+				"mattr": 0.750, "avg_sentence_length": 17.1, "max_sentence_length": 30,
+				"flesch_ease": 75.0, "flesch_grade": 7.5, "gunning_fog": 8.8,
+				"coleman_liau": 8.0, "smog": 7.5, "ari": 7.8
+			},
+			"sentence_lengths": [17, 30, 10, 22, 15, 18, 8],
+			"preview": "The laboratory was cold...",
+			"chapter": 2
+		}
+	],
+	"notable": {
+		"longest_sentences": [1, 3],
+		"highest_mattr": [4, 1],
+		"highest_fog": [1, 3],
+		"shortest_sentences": [5]
+	},
+	"pacing": {
+		"sentence_count": 45,
+		"distribution": {
+			"mean": 18.3, "median": 18.0, "std_dev": 8.5,
+			"min": 6, "max": 45,
+			"percentiles": { "10": 8, "25": 12, "50": 18, "75": 24, "90": 35 }
+		},
+		"staccato_passages": [],
+		"flowing_passages": [
+			{ "block_id": 1, "avg_sentence_length": 20.0, "sentence_count": 8, "preview": "When lights were paling..." }
+		]
+	}
+}
