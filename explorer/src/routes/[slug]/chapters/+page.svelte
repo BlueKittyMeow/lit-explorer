@@ -113,6 +113,8 @@
 						<td>
 							<span class="sentiment-dot {sentimentClass(chapter.sentiment.compound)}"
 								title="Sentiment: {chapter.sentiment.compound.toFixed(2)}"
+								role="img"
+								aria-label="Sentiment: {chapter.sentiment.compound.toFixed(2)} ({sentimentClass(chapter.sentiment.compound)})"
 							></span>
 						</td>
 						<td>{chapter.title}</td>

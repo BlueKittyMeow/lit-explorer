@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Block, Notable } from '$lib/types/analysis';
 	import MiniChart from '$lib/components/MiniChart.svelte';
-	import { resolveChartColors } from '$lib/utils/chart-colors';
+	import { resolveChartColors, onThemeChange } from '$lib/utils/chart-colors';
 
 	let { block, notable }: { block: Block; notable?: Notable } = $props();
 
@@ -9,6 +9,7 @@
 
 	$effect(() => {
 		chartColors = resolveChartColors();
+		return onThemeChange(() => { chartColors = resolveChartColors(); });
 	});
 
 	// Sentence lengths bar chart data

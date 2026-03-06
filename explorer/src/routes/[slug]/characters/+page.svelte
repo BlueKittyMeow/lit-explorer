@@ -1,7 +1,7 @@
 <script lang="ts">
 	import CharacterCard from '$lib/components/CharacterCard.svelte';
 	import VerbDomainChart from '$lib/components/VerbDomainChart.svelte';
-	import { resolveChartColors, chartPalette } from '$lib/utils/chart-colors';
+	import { resolveChartColors, chartPalette, onThemeChange } from '$lib/utils/chart-colors';
 
 	let { data } = $props();
 
@@ -9,6 +9,7 @@
 
 	$effect(() => {
 		chartColors = resolveChartColors();
+		return onThemeChange(() => { chartColors = resolveChartColors(); });
 	});
 
 	// All character names

@@ -55,3 +55,34 @@ export function resolveChartColors(): ChartColorSet {
 export function chartPalette(colors: ChartColorSet): string[] {
 	return [colors.blue, colors.rose, colors.green, colors.amber];
 }
+
+/**
+ * Theme version counter — increments when the dark/light class changes on <html>.
+ * Components can read this in `$effect` to reactively re-resolve chart colors
+ * when the theme toggles at runtime.
+ */
+let _themeVersion = 0;
+let _observers: Array<() => void> = [];
+
+export function getThemeVersion(): number {
+	return _themeVersion;
+}
+
+export function onThemeChange(callback: () => void): () => void {
+	_observers.push(callback);
+	return () => {
+		_observers = _observers.filter((cb) => cb !== callback);
+	};
+}
+
+// Start watching for theme class changes (client-only, runs once)
+if (typeof document !== 'undefined') {
+	const observer = new MutationObserver(() => {
+		_themeVersion++;
+		for (const cb of _observers) cb();
+	});
+	observer.observe(document.documentElement, {
+		attributes: true,
+		attributeFilter: ['class']
+	});
+}

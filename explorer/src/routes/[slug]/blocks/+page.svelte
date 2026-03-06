@@ -2,7 +2,7 @@
 	import { page } from '$app/state';
 	import BlockReader from '$lib/components/BlockReader.svelte';
 	import BlockMetricsPanel from '$lib/components/BlockMetricsPanel.svelte';
-	import { resolveChartColors } from '$lib/utils/chart-colors';
+	import { resolveChartColors, onThemeChange } from '$lib/utils/chart-colors';
 	import type { Block } from '$lib/types/analysis';
 	import type ChartJS from 'chart.js/auto';
 
@@ -19,11 +19,19 @@
 	];
 	let selectedMetric = $state<MetricKey>('mattr');
 
-	// Selected block (derive initial value to avoid stale-capture warning)
-	let selectedBlockId = $state((() => {
-		const fromParam = page.url.searchParams.get('from');
-		return fromParam ? parseInt(fromParam, 10) : 1;
-	})());
+	// Selected block — synced from ?from= query param, clamped to valid range
+	let selectedBlockId = $state(1);
+
+	// Sync from query param on navigation (handles chapter links → blocks page)
+	$effect(() => {
+		const from = page.url.searchParams.get('from');
+		if (from) {
+			const parsed = parseInt(from, 10);
+			if (!isNaN(parsed) && data.analysis.blocks.some((b) => b.id === parsed)) {
+				selectedBlockId = parsed;
+			}
+		}
+	});
 
 	let selectedBlock = $derived(
 		data.analysis.blocks.find((b) => b.id === selectedBlockId) ?? data.analysis.blocks[0]
@@ -44,9 +52,12 @@
 		...data.analysis.notable.shortest_sentences,
 	]));
 
-	// Chart colors
+	// Chart colors — re-resolve on theme toggle via MutationObserver
 	let chartColors = $state(resolveChartColors());
-	$effect(() => { chartColors = resolveChartColors(); });
+	$effect(() => {
+		chartColors = resolveChartColors();
+		return onThemeChange(() => { chartColors = resolveChartColors(); });
+	});
 
 	// Chart instance
 	let canvas: HTMLCanvasElement;
@@ -73,8 +84,10 @@
 		const metric = selectedMetric;
 		const colors = chartColors;
 		const blocks = data.analysis.blocks;
+		let cancelled = false;
 
 		import('chart.js/auto').then(({ default: Chart }) => {
+			if (cancelled) return;
 			if (chart) chart.destroy();
 
 			const pointColors = blocks.map((b) =>
@@ -147,6 +160,7 @@
 		});
 
 		return () => {
+			cancelled = true;
 			chart?.destroy();
 			chart = undefined;
 		};

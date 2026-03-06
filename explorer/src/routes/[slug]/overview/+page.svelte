@@ -2,7 +2,7 @@
 	import { page } from '$app/state';
 	import MetricCard from '$lib/components/MetricCard.svelte';
 	import MiniChart from '$lib/components/MiniChart.svelte';
-	import { resolveChartColors, chartPalette } from '$lib/utils/chart-colors';
+	import { resolveChartColors, chartPalette, onThemeChange } from '$lib/utils/chart-colors';
 
 	let { data } = $props();
 	let slug = $derived(page.params.slug);
@@ -20,11 +20,12 @@
 		? (data.chapters.chapters.reduce((s, c) => s + c.dialogue_ratio, 0) / data.chapters.chapters.length * 100).toFixed(0) + '%'
 		: '—');
 
-	// Resolve CSS variable chart colors for theme-awareness (SSR-safe via shared utility)
+	// Resolve CSS variable chart colors for theme-awareness (SSR-safe, theme-reactive)
 	let chartColors = $state(resolveChartColors());
 
 	$effect(() => {
 		chartColors = resolveChartColors();
+		return onThemeChange(() => { chartColors = resolveChartColors(); });
 	});
 
 	// Chart data
