@@ -424,14 +424,32 @@ class Analyzer:
 
 **silence** — Measures gaps between dialogue (in word count). Maps where characters go quiet. Contributes to `chapters.json`.
 
-### Character Auto-Detection
+### Character Detection & Refinement
 
-If `--characters` is not provided, the engine should auto-detect likely character names:
+The engine detects character candidates; the explorer presents them for user confirmation. Neither layer alone can solve the problem — NER finds names but can't judge narrative relevance, and users shouldn't have to type names from memory.
+
+**Detection (engine):**
 
 1. Run spaCy NER, collect all PERSON entities
 2. Count occurrences, filter to those appearing > N times (default 10)
-3. Use the top characters (capped at 8 to keep analysis focused)
-4. Store detected list in `manifest.json` for frontend to read
+3. Cap at configurable max (default 8) to keep analysis focused
+4. Normalize: first-name extraction, title stripping ("Dr.", "Herr"), noble particle handling ("von")
+5. **Merge suggestions:** When a full-name entity like "Klara Braun" appears, flag that "Klara" and "Braun" may be the same person. Group by overlapping name spans.
+6. **Alias grouping:** Collect all name forms that share an entity (e.g., "Emil", "Králik", "Emil Králik") into candidate alias groups.
+7. Store candidates with mention counts, suggested merges, and alias groups in detection output.
+
+**Refinement (explorer UI — interactive workflow):**
+
+1. After auto-detection, present candidates as a checklist with mention counts and context snippets.
+2. Show merge suggestions (e.g., "Braun appears 12 times — merge with Klara?") as toggleable links.
+3. Users can: select/deselect characters, confirm or dismiss merges, add custom names not detected by NER.
+4. Confirmed character config saved to analysis directory as `character_config.json` — reused on re-analysis.
+5. If `--characters` CLI flag is provided, skip detection and use the explicit list (current behavior, preserved).
+
+**What detection cannot solve (by design):**
+
+- **Dead/absent characters** discussed in retrospect (e.g., Reichmann in The Specimen). NER correctly finds them as PERSON entities with verbs attributed via past-tense narration. The user must decide whether to include them — the engine surfaces the candidate, the UI lets the user exclude.
+- **Tense-aware verb filtering** (distinguishing "Emil walks" from "Reichmann had worked") is deferred as a potential future enhancement, not a near-term goal. The pragmatic path is user curation.
 
 ### Pronoun Resolution Strategy
 
@@ -485,6 +503,7 @@ Matching Scriptorium's patterns:
 - Voice distribution pie charts
 - Top verbs and top actions lists
 - Click a character → deep dive page
+- **Character refinement panel:** review auto-detected candidates, confirm/exclude, merge aliases (e.g., "Braun" → "Klara"), trigger re-analysis with updated cast
 
 **`/characters/[name]` — Character Deep Dive**
 - Full verb listing with categories
@@ -599,12 +618,13 @@ Color palette (light mode):
 7. Chapter breakdown page
 
 ### Phase 3: Polish & Features
-1. Auto-detect characters (NER-based)
+1. Character refinement UI (detect → suggest merges → user confirms → re-analyze)
 2. Version comparison (`/compare`)
 3. PNG chart export (for embedding in documents)
 4. BookNLP integration (optional venv, richer coref + directed sentiment)
 5. Silence mapping visualization
 6. Verb agency over narrative progression (does a character gain/lose agency?)
+7. Input format support: `.scriv` (Scrivener bundles), `.rtf` with heading styles
 
 ### Phase 4: Scriptorium Integration
 1. Move Chart, BlockReader, ProfileCard components into Scriptorium's `$lib`
