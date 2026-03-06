@@ -139,6 +139,17 @@ def analyze(file_path, output, title, only, tt_window, tt_smoothing, characters)
         for block in results["texttiling"].data["blocks"]:
             block["chapter"] = mapping.get(str(block["id"]))
 
+        # Remove pre-chapter blocks (chapter=null) from notable lists
+        chapter_block_ids = {
+            b["id"] for b in results["texttiling"].data["blocks"]
+            if b["chapter"] is not None
+        }
+        for key in results["texttiling"].data.get("notable", {}):
+            results["texttiling"].data["notable"][key] = [
+                bid for bid in results["texttiling"].data["notable"][key]
+                if bid in chapter_block_ids
+            ]
+
     # 3. Add pacing to texttiling data
     if "pacing" in results and "texttiling" in results:
         results["texttiling"].data["pacing"] = dict(results["pacing"].data)

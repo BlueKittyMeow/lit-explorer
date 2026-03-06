@@ -59,10 +59,10 @@ class ChaptersAnalyzer(Analyzer):
         sent_offsets = locate_sentences(text, sentences)
 
         # 3. Build block_to_chapter mapping
-        block_to_chapter: dict[str, int] = {}
+        block_to_chapter: dict[str, int | None] = {}
         for block in blocks:
             block_mid = (block["start_char"] + block["end_char"]) / 2
-            assigned = boundaries[0].number  # default to first chapter
+            assigned: int | None = None  # pre-chapter blocks stay null
             for ch in boundaries:
                 if ch.start_char <= block_mid < ch.end_char:
                     assigned = ch.number
