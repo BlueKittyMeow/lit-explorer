@@ -12,6 +12,7 @@
 			},
 			"sentence_lengths": [20, 15, 45, 12, 18, 22, 30, 8],
 			"preview": "When lights were paling one by one...",
+			"longest_sentence_preview": "The chandelier hung from the vaulted ceiling casting long amber shadows across the marble floor where decades of footsteps had worn gentle valleys...",
 			"chapter": 1
 		},
 		{
@@ -24,6 +25,7 @@
 			},
 			"sentence_lengths": [18, 22, 14, 20, 38, 10, 16, 24, 12, 6],
 			"preview": "Emil walked to the window and paused...",
+			"longest_sentence_preview": "He looked out across the rooftops remembering the conversation they had shared the previous evening about the nature of memory.",
 			"chapter": 1
 		},
 		{
@@ -36,6 +38,7 @@
 			},
 			"sentence_lengths": [19, 25, 14, 40, 10, 18, 22, 15, 7],
 			"preview": "Felix sat at the table absorbed in thought...",
+			"longest_sentence_preview": "The pages before him blurred as his mind wandered to the question that had occupied him for weeks now without resolution.",
 			"chapter": 1
 		},
 		{
@@ -48,6 +51,7 @@
 			},
 			"sentence_lengths": [17, 20, 12, 35, 8, 22, 15, 18, 25, 10, 8],
 			"preview": "Clara entered the hall and looked around...",
+			"longest_sentence_preview": "She noticed a figure standing in the shadows near the far wall partially obscured by the heavy velvet curtain.",
 			"chapter": 2
 		},
 		{
@@ -60,6 +64,7 @@
 			},
 			"sentence_lengths": [17, 30, 10, 22, 15, 18, 8],
 			"preview": "The laboratory was cold...",
+			"longest_sentence_preview": "The instruments on the bench gleamed under the single overhead lamp casting precise shadows.",
 			"chapter": 2
 		}
 	],

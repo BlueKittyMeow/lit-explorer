@@ -147,7 +147,7 @@
 					<a href="/{slug}/blocks" class="notable-item">
 						<span class="notable-label">Longest sentences</span>
 						<span class="notable-value">Block {longestSentenceBlock.id}</span>
-						<span class="notable-detail">max {longestSentenceBlock.metrics.max_sentence_length} words — <em>"{longestSentenceBlock.preview}"</em></span>
+						<span class="notable-detail">{longestSentenceBlock.metrics.max_sentence_length} words — <em>"{longestSentenceBlock.longest_sentence_preview ?? longestSentenceBlock.preview}"</em></span>
 					</a>
 				{/if}
 				{#if richestBlock}

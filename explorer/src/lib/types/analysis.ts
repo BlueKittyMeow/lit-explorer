@@ -40,6 +40,7 @@ export interface Block {
 	metrics: BlockMetrics;
 	sentence_lengths: number[];
 	preview: string;
+	longest_sentence_preview?: string;
 	chapter: number | null;
 }
 

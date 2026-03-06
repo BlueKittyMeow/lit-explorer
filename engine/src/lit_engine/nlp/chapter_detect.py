@@ -68,11 +68,23 @@ def detect_chapters(
         if m is None:
             continue
 
-        # Require blank line before (except at very start of text)
+        # Require blank line before, with two exceptions:
+        #   1. The very start of the text (i == 0).
+        #   2. The first chapter heading found, IF it doesn't look like a TOC
+        #      entry. Epigraphs commonly precede Chapter 1 without a blank
+        #      separator, but TOC lines are followed by more headings nearby.
         if i > 0:
             prev_line = lines[i - 1][0].strip()
             if prev_line != "":
-                continue
+                if headings:
+                    # Subsequent headings always need blank line
+                    continue
+                # First heading without blank line: check if it's a TOC entry
+                # (another heading pattern match within the next 15 lines)
+                lookahead = lines[i + 1 : i + 16]
+                is_toc_entry = any(pat.match(line) is not None for line, _ in lookahead)
+                if is_toc_entry:
+                    continue
 
         chapter_num = int(m.group(1))
         title = (m.group(2) or "").strip()

@@ -8,7 +8,8 @@ from lit_engine.analyzers.texttiling import TextTilingAnalyzer, prepare_text
 
 REQUIRED_BLOCK_KEYS = {
     "id", "tile_index", "start_char", "end_char", "word_count",
-    "sentence_count", "metrics", "sentence_lengths", "preview", "chapter",
+    "sentence_count", "metrics", "sentence_lengths", "preview",
+    "longest_sentence_preview", "chapter",
 }
 
 REQUIRED_METRIC_KEYS = {
@@ -185,3 +186,25 @@ class TestTextTilingAnalyzer:
         result = analyzer.analyze(clean_sample_text, config)
         offset_warnings = [w for w in result.warnings if "offset" in w.lower() or "locate" in w.lower()]
         assert offset_warnings == [], f"Unexpected offset fallback warnings: {offset_warnings}"
+
+    def test_longest_sentence_preview_matches_max(self, result):
+        """longest_sentence_preview contains text from the sentence with max_sentence_length."""
+        from nltk.tokenize import word_tokenize
+        for block in result.data["blocks"]:
+            preview = block["longest_sentence_preview"]
+            assert isinstance(preview, str)
+            assert len(preview) > 0
+            # Preview is truncated at 200 chars; verify it's not longer
+            assert len(preview) <= 203  # 200 + "..."
+
+    def test_longest_sentence_preview_truncation(self, analyzer, default_config):
+        """Sentences longer than 200 chars are truncated with ellipsis."""
+        # Build a text with one very long sentence
+        long_sentence = "The " + "very " * 100 + "long sentence ended here."
+        text = (long_sentence + "\n\nShort.\n\n") * 20
+        config = dict(default_config)
+        config["texttiling_w"] = 10
+        config["texttiling_k"] = 5
+        result = analyzer.analyze(text, config)
+        for block in result.data["blocks"]:
+            assert len(block["longest_sentence_preview"]) <= 203

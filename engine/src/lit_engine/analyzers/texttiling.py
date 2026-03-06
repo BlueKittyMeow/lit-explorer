@@ -202,10 +202,14 @@ def build_blocks(
             )
             continue
 
-        sent_lengths = [
-            len([w for w in word_tokenize(s) if w.isalpha()])
+        sent_word_counts = [
+            (len([w for w in word_tokenize(s) if w.isalpha()]), s)
             for s in sentences
         ]
+        sent_lengths = [wc for wc, _ in sent_word_counts]
+
+        # Find the longest sentence text for the notable preview
+        longest_sent_text = max(sent_word_counts, key=lambda x: x[0])[1] if sent_word_counts else ""
 
         mattr_score = mattr(alpha_words, window_length=min(mattr_window, len(alpha_words)))
 
@@ -233,6 +237,7 @@ def build_blocks(
             },
             "sentence_lengths": sent_lengths,
             "preview": text_content[:120] + ("..." if len(text_content) > 120 else ""),
+            "longest_sentence_preview": longest_sent_text[:200] + ("..." if len(longest_sent_text) > 200 else ""),
             "chapter": None,  # filled by chapters analyzer in Stage 3
         })
 

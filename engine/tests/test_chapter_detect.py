@@ -65,17 +65,45 @@ class TestDetectChapters:
         chapters = detect_chapters(text)
         assert chapters == []
 
-    def test_blank_line_required(self):
-        """Heading mid-paragraph without blank line is not detected."""
+    def test_blank_line_required_for_subsequent_headings(self):
+        """Second+ heading mid-paragraph without blank line is not detected."""
         text = (
-            "Some text here.\n"
-            "Chapter 1 - False Positive\n"  # no blank line before
-            "More text.\n"
+            "\n"
+            "Chapter 1 - Real Chapter\n"
+            + ("Word " * 200) + "\n"
+            "Chapter 2 - False Positive\n"  # no blank line before
+            + ("Word " * 200) + "\n"
+            "\n"
+            "Chapter 3 - Also Real\n"
+            + ("Word " * 200) + "\n"
         )
-        # Only matches with blank line before (or at start of text)
-        chapters = detect_chapters(text)
-        # This should not match because no blank line precedes it
-        assert len(chapters) == 0
+        chapters = detect_chapters(text, min_chapter_words=0)
+        numbers = [c.number for c in chapters]
+        assert 1 in numbers
+        assert 2 not in numbers  # rejected: no blank line
+        assert 3 in numbers
+
+    def test_first_heading_tolerates_frontmatter(self):
+        """First chapter heading detected even without blank line (epigraph/frontmatter).
+
+        The content between chapters must span >15 lines so the lookahead
+        TOC detector doesn't see Chapter 2 as a nearby heading.
+        """
+        body = "".join(f"Sentence number {i} in this chapter.\n" for i in range(20))
+        text = (
+            "When lights were paling one by one\n"
+            "- W.B. Yeats\n"
+            "Chapter 1 - Café Union\n"
+            + body
+            + "\n"
+            "Chapter 2 - The Theatre\n"
+            + body
+        )
+        chapters = detect_chapters(text, min_chapter_words=0)
+        assert len(chapters) == 2
+        assert chapters[0].number == 1
+        assert chapters[0].title == "Café Union"
+        assert chapters[1].number == 2
 
     def test_min_chapter_words_filter(self):
         """Chapters shorter than min_chapter_words are filtered out."""
@@ -137,3 +165,22 @@ class TestDetectChapters:
         )
         chapters = detect_chapters(text, min_chapter_words=0)
         assert chapters[0].title == "The Beginning"
+
+    def test_toc_entries_rejected_by_lookahead(self):
+        """TOC entries are rejected: nearby heading patterns trigger the lookahead guard."""
+        text = (
+            "Table of Contents\n"
+            "Chapter 1 - Dawn\n"        # TOC entry (first heading, no blank line)
+            "Chapter 2 - Midday\n"      # TOC entry (rejected: no blank line, not first)
+            "\n"
+            "Chapter 1 - Dawn\n"        # Real chapter
+            + ("Word " * 200) + "\n"
+            "\n"
+            "Chapter 2 - Midday\n"      # Real chapter
+            + ("Word " * 200) + "\n"
+        )
+        chapters = detect_chapters(text, min_chapter_words=100)
+        # TOC entries rejected by lookahead (nearby headings). Real chapters survive.
+        assert len(chapters) == 2
+        assert chapters[0].number == 1
+        assert chapters[1].number == 2
