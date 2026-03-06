@@ -6,6 +6,7 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { resolve, sep } from 'node:path';
 import { error } from '@sveltejs/kit';
+import { env } from '$env/dynamic/private';
 import type {
 	Manifest,
 	Analysis,
@@ -19,8 +20,7 @@ import type {
 const SLUG_PATTERN = /^[a-z0-9][a-z0-9_-]*$/;
 
 function getAnalysesDir(): string {
-	// Use dynamic env at runtime; fallback is dev-only convenience
-	return process.env.ANALYSES_DIR || resolve(process.cwd(), '..', 'shared', 'analyses');
+	return env.ANALYSES_DIR || resolve(process.cwd(), '..', 'shared', 'analyses');
 }
 
 function validateSlug(slug: string): void {
@@ -63,7 +63,7 @@ export async function listAnalyses(): Promise<AnalysisSummary[]> {
 		try {
 			const manifest = await readJson<Manifest>(entry, 'manifest.json');
 			summaries.push({
-				slug: manifest.slug,
+				slug: entry,
 				title: manifest.title,
 				word_count: manifest.word_count,
 				chapter_count: manifest.chapter_count,
@@ -71,8 +71,8 @@ export async function listAnalyses(): Promise<AnalysisSummary[]> {
 				analyzed_at: manifest.analyzed_at,
 				analyzers_run: manifest.analyzers_run
 			});
-		} catch {
-			// Skip directories without valid manifest
+		} catch (err) {
+			console.warn(`[lit-explorer] Skipping analysis "${entry}": failed to read manifest`, err);
 		}
 	}
 

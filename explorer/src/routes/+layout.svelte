@@ -1,17 +1,34 @@
 <script lang="ts">
 	import '../app.css';
 
-	let { children } = $props();
-	let darkMode = $state(false);
+	type ThemePref = 'light' | 'dark' | 'system';
+	const THEME_LABELS: Record<ThemePref, string> = { light: 'Light', dark: 'Dark', system: 'System' };
+	const THEME_CYCLE: Record<ThemePref, ThemePref> = { light: 'dark', dark: 'system', system: 'light' };
 
-	function toggleTheme() {
-		darkMode = !darkMode;
-		document.documentElement.classList.toggle('dark', darkMode);
-		localStorage.setItem('theme', darkMode ? 'dark' : 'light');
+	let { children } = $props();
+	let themePref = $state<ThemePref>('system');
+
+	function applyTheme(pref: ThemePref) {
+		const isDark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+		document.documentElement.classList.toggle('dark', isDark);
+	}
+
+	function cycleTheme() {
+		themePref = THEME_CYCLE[themePref];
+		localStorage.setItem('theme', themePref);
+		applyTheme(themePref);
 	}
 
 	$effect(() => {
-		darkMode = document.documentElement.classList.contains('dark');
+		const stored = localStorage.getItem('theme') as ThemePref | null;
+		themePref = stored && stored in THEME_LABELS ? stored : 'system';
+		applyTheme(themePref);
+
+		// Listen for OS theme changes when in system mode
+		const mql = window.matchMedia('(prefers-color-scheme: dark)');
+		const handler = () => { if (themePref === 'system') applyTheme('system'); };
+		mql.addEventListener('change', handler);
+		return () => mql.removeEventListener('change', handler);
 	});
 </script>
 
@@ -22,8 +39,8 @@
 <div class="app-shell">
 	<header class="top-bar">
 		<a href="/" class="brand">Lit Explorer</a>
-		<button class="theme-toggle" onclick={toggleTheme} aria-label="Toggle theme">
-			{darkMode ? 'Light' : 'Dark'}
+		<button class="theme-toggle" onclick={cycleTheme} aria-label="Theme: {THEME_LABELS[themePref]}. Click to cycle.">
+			{THEME_LABELS[themePref]}
 		</button>
 	</header>
 

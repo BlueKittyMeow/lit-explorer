@@ -2,13 +2,22 @@
  * Component smoke tests for shared UI components.
  *
  * Uses @testing-library/svelte to render components in jsdom.
- * MiniChart is not tested here because Chart.js requires a real canvas context.
+ * MiniChart chart rendering is not tested (Chart.js needs real canvas),
+ * but the accessibility wrapper (figure/figcaption) is verified.
  */
 
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/svelte';
 import MetricCard from '../../src/lib/components/MetricCard.svelte';
+import MiniChart from '../../src/lib/components/MiniChart.svelte';
 import AnalysisCard from '../../src/lib/components/AnalysisCard.svelte';
+
+// Mock Chart.js — canvas doesn't exist in jsdom
+vi.mock('chart.js/auto', () => ({
+	default: class MockChart {
+		destroy() {}
+	}
+}));
 
 afterEach(() => cleanup());
 
@@ -32,6 +41,29 @@ describe('MetricCard', () => {
 	it('does not render subtitle when absent', () => {
 		render(MetricCard, { props: { label: 'Words', value: 100 } });
 		expect(screen.queryByText('ease score')).not.toBeInTheDocument();
+	});
+});
+
+describe('MiniChart', () => {
+	const chartData = {
+		labels: [1, 2, 3],
+		datasets: [{ label: 'Test', data: [0.5, 0.8, 0.3] }]
+	};
+
+	it('renders figure with aria-label', () => {
+		render(MiniChart, { props: { data: chartData, label: 'Sentiment arc' } });
+		const figure = screen.getByRole('img');
+		expect(figure).toHaveAttribute('aria-label', 'Sentiment arc');
+	});
+
+	it('renders sr-only figcaption with data point count', () => {
+		render(MiniChart, { props: { data: chartData, label: 'Test chart' } });
+		expect(screen.getByText('Test chart: 3 data points')).toBeInTheDocument();
+	});
+
+	it('renders canvas element', () => {
+		const { container } = render(MiniChart, { props: { data: chartData } });
+		expect(container.querySelector('canvas')).toBeInTheDocument();
 	});
 });
 

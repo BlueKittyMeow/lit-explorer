@@ -9,6 +9,9 @@ export default defineConfig({
 		setupFiles: ['tests/setup.ts']
 	},
 	resolve: {
+		// Required for Svelte 5 component tests (prevents server bundle resolution).
+		// NOTE: This is global, not test-scoped. If you hit unexpected SSR import
+		// errors in production, try scoping this to test config only.
 		conditions: ['browser']
 	}
 });

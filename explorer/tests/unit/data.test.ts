@@ -2,24 +2,28 @@
  * Tests for the data loading layer ($lib/server/data.ts).
  *
  * These tests use the fixture data in tests/fixtures/test-analysis/
- * and set ANALYSES_DIR to point at the fixtures directory.
+ * and mock $env/dynamic/private to set ANALYSES_DIR.
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { resolve } from 'node:path';
 
 const FIXTURES_DIR = resolve(import.meta.dirname, '..', 'fixtures');
 
-// Point the data loader at our fixtures
-beforeAll(() => {
-	process.env.ANALYSES_DIR = FIXTURES_DIR;
-});
+// Mock SvelteKit's $env/dynamic/private
+vi.mock('$env/dynamic/private', () => ({
+	env: { ANALYSES_DIR: resolve(import.meta.dirname, '..', 'fixtures') }
+}));
 
-afterAll(() => {
-	delete process.env.ANALYSES_DIR;
-});
+// Mock @sveltejs/kit error() to throw like it does at runtime
+vi.mock('@sveltejs/kit', () => ({
+	error: (status: number, message: string) => {
+		const err = new Error(message);
+		(err as any).status = status;
+		throw err;
+	}
+}));
 
-// Dynamic import after env is set, so the loader picks up the fixture path
 async function getLoaders() {
 	return await import('../../src/lib/server/data.js');
 }
@@ -38,14 +42,15 @@ describe('listAnalyses', () => {
 	});
 
 	it('returns empty array for nonexistent directory', async () => {
-		const origDir = process.env.ANALYSES_DIR;
-		process.env.ANALYSES_DIR = '/tmp/nonexistent-lit-explorer-test';
+		const envMod = await import('$env/dynamic/private');
+		const origDir = envMod.env.ANALYSES_DIR;
+		envMod.env.ANALYSES_DIR = '/tmp/nonexistent-lit-explorer-test';
 		try {
 			const { listAnalyses } = await getLoaders();
 			const list = await listAnalyses();
 			expect(list).toEqual([]);
 		} finally {
-			process.env.ANALYSES_DIR = origDir;
+			envMod.env.ANALYSES_DIR = origDir;
 		}
 	});
 });

@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import Chart from 'chart.js/auto';
 	import type { ChartData, ChartOptions, ChartType } from 'chart.js';
 
@@ -11,9 +10,17 @@
 	} = $props();
 
 	let canvas: HTMLCanvasElement;
+	let chart: Chart | undefined;
 
-	onMount(() => {
-		const chart = new Chart(canvas, {
+	$effect(() => {
+		if (!canvas) return;
+
+		// Destroy previous chart instance if props changed
+		if (chart) {
+			chart.destroy();
+		}
+
+		chart = new Chart(canvas, {
 			type,
 			data,
 			options: {
@@ -22,7 +29,11 @@
 				...options
 			}
 		});
-		return () => chart.destroy();
+
+		return () => {
+			chart?.destroy();
+			chart = undefined;
+		};
 	});
 </script>
 

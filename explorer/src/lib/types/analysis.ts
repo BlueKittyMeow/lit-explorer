@@ -24,10 +24,10 @@ export interface BlockMetrics {
 	flesch_ease: number;
 	flesch_grade: number;
 	gunning_fog: number;
-	// Enriched by readability analyzer via CLI pipeline
-	coleman_liau: number;
-	smog: number;
-	ari: number;
+	// Enriched by readability analyzer via CLI pipeline (absent if readability analyzer failed)
+	coleman_liau?: number;
+	smog?: number;
+	ari?: number;
 }
 
 export interface Block {
