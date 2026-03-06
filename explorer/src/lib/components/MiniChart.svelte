@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Chart from 'chart.js/auto';
 	import type { ChartData, ChartOptions, ChartType } from 'chart.js';
+	import type ChartJS from 'chart.js/auto';
 
 	let { data, type = 'line' as ChartType, options = {}, label = 'Chart' }: {
 		data: ChartData;
@@ -10,24 +10,26 @@
 	} = $props();
 
 	let canvas: HTMLCanvasElement;
-	let chart: Chart | undefined;
+	let chart: ChartJS | undefined;
 
 	$effect(() => {
 		if (!canvas) return;
 
-		// Destroy previous chart instance if props changed
-		if (chart) {
-			chart.destroy();
-		}
-
-		chart = new Chart(canvas, {
-			type,
-			data,
-			options: {
-				responsive: true,
-				maintainAspectRatio: false,
-				...options
+		// Dynamic import avoids top-level chart.js/auto reference that crashes SSR
+		import('chart.js/auto').then(({ default: Chart }) => {
+			if (chart) {
+				chart.destroy();
 			}
+
+			chart = new Chart(canvas, {
+				type,
+				data,
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					...options
+				}
+			});
 		});
 
 		return () => {

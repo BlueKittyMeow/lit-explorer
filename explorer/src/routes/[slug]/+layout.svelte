@@ -1,13 +1,16 @@
 <script lang="ts">
+	import { page } from '$app/state';
+
 	let { data, children } = $props();
+	let slug = $derived(page.params.slug);
 </script>
 
 <div class="analysis-layout">
 	<nav class="sub-nav" aria-label="Analysis sections">
-		<a href="/{data.manifest.slug}/overview">Overview</a>
-		<a href="/{data.manifest.slug}/chapters">Chapters</a>
-		<a href="/{data.manifest.slug}/characters">Characters</a>
-		<a href="/{data.manifest.slug}/blocks">Blocks</a>
+		<a href="/{slug}/overview">Overview</a>
+		<a href="/{slug}/chapters">Chapters</a>
+		<a href="/{slug}/characters">Characters</a>
+		<a href="/{slug}/blocks">Blocks</a>
 	</nav>
 
 	<header class="analysis-header">

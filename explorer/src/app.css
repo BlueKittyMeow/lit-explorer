@@ -12,6 +12,14 @@
 	--accent-light: #f5e6c8;
 	--border: #e0d8cc;
 	--shadow: rgba(44, 36, 23, 0.08);
+	--chart-blue: hsl(220, 50%, 55%);
+	--chart-blue-fill: hsla(220, 50%, 55%, 0.1);
+	--chart-green: hsl(150, 45%, 45%);
+	--chart-green-fill: hsla(150, 45%, 45%, 0.1);
+	--chart-amber: hsl(35, 70%, 50%);
+	--chart-amber-fill: hsla(35, 70%, 50%, 0.1);
+	--chart-rose: hsl(350, 55%, 55%);
+	--chart-rose-fill: hsla(350, 55%, 55%, 0.1);
 	--radius: 6px;
 	--font-serif: Georgia, 'Times New Roman', serif;
 	--font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
@@ -28,6 +36,14 @@
 	--accent: #d4a832;
 	--accent-hover: #e0bc50;
 	--accent-light: #3a3020;
+	--chart-blue: hsl(220, 50%, 65%);
+	--chart-blue-fill: hsla(220, 50%, 65%, 0.15);
+	--chart-green: hsl(150, 45%, 55%);
+	--chart-green-fill: hsla(150, 45%, 55%, 0.15);
+	--chart-amber: hsl(35, 70%, 60%);
+	--chart-amber-fill: hsla(35, 70%, 60%, 0.15);
+	--chart-rose: hsl(350, 55%, 65%);
+	--chart-rose-fill: hsla(350, 55%, 65%, 0.15);
 	--border: #3a342c;
 	--shadow: rgba(0, 0, 0, 0.3);
 }
