@@ -2,6 +2,7 @@
 	import { page } from '$app/state';
 	import MetricCard from '$lib/components/MetricCard.svelte';
 	import MiniChart from '$lib/components/MiniChart.svelte';
+	import { resolveChartColors, chartPalette } from '$lib/utils/chart-colors';
 
 	let { data } = $props();
 	let slug = $derived(page.params.slug);
@@ -19,21 +20,11 @@
 		? (data.chapters.chapters.reduce((s, c) => s + c.dialogue_ratio, 0) / data.chapters.chapters.length * 100).toFixed(0) + '%'
 		: '—');
 
-	// Resolve CSS variable chart colors for theme-awareness
-	let chartColors = $state({ blue: '', blueFill: '', green: '', greenFill: '', amber: '', amberFill: '', rose: '', roseFill: '' });
+	// Resolve CSS variable chart colors for theme-awareness (SSR-safe via shared utility)
+	let chartColors = $state(resolveChartColors());
 
 	$effect(() => {
-		const styles = getComputedStyle(document.documentElement);
-		chartColors = {
-			blue: styles.getPropertyValue('--chart-blue').trim(),
-			blueFill: styles.getPropertyValue('--chart-blue-fill').trim(),
-			green: styles.getPropertyValue('--chart-green').trim(),
-			greenFill: styles.getPropertyValue('--chart-green-fill').trim(),
-			amber: styles.getPropertyValue('--chart-amber').trim(),
-			amberFill: styles.getPropertyValue('--chart-amber-fill').trim(),
-			rose: styles.getPropertyValue('--chart-rose').trim(),
-			roseFill: styles.getPropertyValue('--chart-rose-fill').trim(),
-		};
+		chartColors = resolveChartColors();
 	});
 
 	// Chart data
@@ -81,7 +72,7 @@
 		}
 		return [...domains].sort();
 	});
-	let domainColorPalette = $derived([chartColors.blue, chartColors.rose, chartColors.green, chartColors.amber]);
+	let domainColorPalette = $derived(chartPalette(chartColors));
 	let verbDomainChartData = $derived({
 		labels: allVerbDomains(),
 		datasets: characterNames.map((name, i) => ({
