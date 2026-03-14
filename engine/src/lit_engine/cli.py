@@ -19,6 +19,7 @@ from lit_engine.output.json_export import (
     write_chapters,
     write_manifest,
     write_sentiment,
+    write_silence,
 )
 
 
@@ -178,6 +179,11 @@ def analyze(file_path, output, title, only, tt_window, tt_smoothing, characters)
     # sentiment.json
     if "sentiment" in results:
         path = write_sentiment(output, results["sentiment"].data)
+        click.echo(f"  {path}")
+
+    # silence.json
+    if "silence" in results:
+        path = write_silence(output, results["silence"].data)
         click.echo(f"  {path}")
 
     # Copy manuscript

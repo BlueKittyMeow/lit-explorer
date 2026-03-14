@@ -71,39 +71,6 @@ describe('loadManifest', () => {
 	});
 });
 
-describe('loadAllData', () => {
-	it('returns complete AnalysisData object', async () => {
-		const { loadAllData } = await getLoaders();
-		const data = await loadAllData('test-analysis');
-
-		// Manifest
-		expect(data.manifest.title).toBe('Test Manuscript');
-
-		// Analysis
-		expect(data.analysis.total_blocks).toBe(5);
-		expect(data.analysis.blocks).toHaveLength(5);
-		expect(data.analysis.blocks[0].metrics.coleman_liau).toBe(10.2);
-		expect(data.analysis.blocks[0].chapter).toBe(1);
-		expect(data.analysis.pacing).toBeDefined();
-		expect(data.analysis.pacing!.sentence_count).toBe(45);
-
-		// Characters
-		expect(Object.keys(data.characters.characters)).toEqual(['emil', 'felix']);
-		expect(data.characters.characters.emil.total_verbs).toBe(120);
-
-		// Chapters
-		expect(data.chapters.chapters).toHaveLength(2);
-		expect(data.chapters.chapters[0].title).toBe('Café Union');
-
-		// Sentiment
-		expect(data.sentiment.arc).toHaveLength(10);
-		expect(data.sentiment.arc[0].neu).toBe(0.90);
-		expect(data.sentiment.smoothed_arc).toHaveLength(3);
-		expect(data.sentiment.extremes.most_positive).not.toBeNull();
-		expect(data.sentiment.extremes.most_negative!.score).toBe(-0.55);
-	});
-});
-
 describe('loadAnalysis', () => {
 	it('loads analysis with pacing data', async () => {
 		const { loadAnalysis } = await getLoaders();
@@ -140,6 +107,18 @@ describe('loadSentiment', () => {
 		expect(sentiment.method).toBe('vader');
 		expect(sentiment.smoothed_arc).toHaveLength(3);
 		expect(sentiment.arc[0].neu).toBe(0.90);
+	});
+});
+
+describe('loadSilence', () => {
+	it('loads silence data with gaps', async () => {
+		const { loadSilence } = await getLoaders();
+		const silence = await loadSilence('test-analysis');
+		expect(silence.total_gaps).toBe(4);
+		expect(silence.gaps).toHaveLength(4);
+		expect(silence.longest_silence).not.toBeNull();
+		expect(silence.longest_silence!.word_count).toBe(210);
+		expect(silence.avg_gap_words).toBe(102.5);
 	});
 });
 

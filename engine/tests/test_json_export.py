@@ -12,6 +12,7 @@ from lit_engine.output.json_export import (
     write_analysis,
     write_json,
     write_manifest,
+    write_silence,
 )
 
 
@@ -143,6 +144,22 @@ class TestManifest:
         with open(path) as f:
             loaded = json.load(f)
         assert loaded["title"] == "Test"
+
+
+class TestWriteSilence:
+    def test_silence_roundtrip(self, tmp_path):
+        """Write then read produces identical silence data."""
+        data = {
+            "gaps": [{"start_char": 0, "end_char": 100, "word_count": 15}],
+            "longest_silence": {"word_count": 15, "position": 0.0, "preview": "Some text..."},
+            "avg_gap_words": 15.0,
+            "total_gaps": 1,
+        }
+        path = write_silence(str(tmp_path), data)
+        with open(path) as f:
+            loaded = json.load(f)
+        assert loaded == data
+        assert os.path.basename(path) == "silence.json"
 
 
 class TestCopyManuscript:

@@ -13,8 +13,8 @@ import type {
 	Characters,
 	Chapters,
 	Sentiment,
+	Silence,
 	AnalysisSummary,
-	AnalysisData
 } from '$lib/types/analysis';
 
 const SLUG_PATTERN = /^[a-z0-9][a-z0-9_-]*$/;
@@ -101,14 +101,6 @@ export async function loadSentiment(slug: string): Promise<Sentiment> {
 	return readJson<Sentiment>(slug, 'sentiment.json');
 }
 
-/** Load all data for a single analysis (overview page). */
-export async function loadAllData(slug: string): Promise<AnalysisData> {
-	const [manifest, analysis, characters, chapters, sentiment] = await Promise.all([
-		loadManifest(slug),
-		loadAnalysis(slug),
-		loadCharacters(slug),
-		loadChapters(slug),
-		loadSentiment(slug)
-	]);
-	return { manifest, analysis, characters, chapters, sentiment };
+export async function loadSilence(slug: string): Promise<Silence> {
+	return readJson<Silence>(slug, 'silence.json');
 }

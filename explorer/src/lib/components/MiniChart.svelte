@@ -14,9 +14,11 @@
 
 	$effect(() => {
 		if (!canvas) return;
+		let cancelled = false;
 
 		// Dynamic import avoids top-level chart.js/auto reference that crashes SSR
 		import('chart.js/auto').then(({ default: Chart }) => {
+			if (cancelled) return;
 			if (chart) {
 				chart.destroy();
 			}
@@ -33,6 +35,7 @@
 		});
 
 		return () => {
+			cancelled = true;
 			chart?.destroy();
 			chart = undefined;
 		};

@@ -43,6 +43,11 @@ def write_sentiment(output_dir: str, data: dict) -> str:
     return write_json(output_dir, "sentiment.json", data)
 
 
+def write_silence(output_dir: str, data: dict) -> str:
+    """Write silence.json (silence analysis)."""
+    return write_json(output_dir, "silence.json", data)
+
+
 def copy_manuscript(source_path: str, output_dir: str) -> str:
     """Copy manuscript to output dir for block reading. Returns dest path."""
     os.makedirs(output_dir, exist_ok=True)

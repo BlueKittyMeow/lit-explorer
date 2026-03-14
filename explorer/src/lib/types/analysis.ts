@@ -176,13 +176,24 @@ export interface Sentiment {
 	};
 }
 
-// Combined: everything loaded for a single analysis
-export interface AnalysisData {
-	manifest: Manifest;
-	analysis: Analysis;
-	characters: Characters;
-	chapters: Chapters;
-	sentiment: Sentiment;
+// silence.json
+export interface SilenceGap {
+	start_char: number;
+	end_char: number;
+	word_count: number;
+}
+
+export interface LongestSilence {
+	word_count: number;
+	position: number;
+	preview: string;
+}
+
+export interface Silence {
+	gaps: SilenceGap[];
+	longest_silence: LongestSilence | null;
+	avg_gap_words: number;
+	total_gaps: number;
 }
 
 // Landing page: summary for listing

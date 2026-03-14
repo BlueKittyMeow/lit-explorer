@@ -157,4 +157,49 @@ describe('Blocks page', () => {
 		const liveRegion = container.querySelector('[aria-live]');
 		expect(liveRegion).toBeInTheDocument();
 	});
+
+	it('navigates to next block with ArrowRight key', async () => {
+		render(BlocksPage, { props: { data } });
+		const chartArea = screen.getByRole('application');
+		chartArea.focus();
+		await fireEvent.keyDown(chartArea, { key: 'ArrowRight' });
+		expect(screen.getByText(/Block 2 of/)).toBeInTheDocument();
+	});
+
+	it('navigates back with ArrowLeft key', async () => {
+		render(BlocksPage, { props: { data } });
+		const chartArea = screen.getByRole('application');
+		chartArea.focus();
+		// Go right then left
+		await fireEvent.keyDown(chartArea, { key: 'ArrowRight' });
+		await fireEvent.keyDown(chartArea, { key: 'ArrowLeft' });
+		expect(screen.getByText(/Block 1 of/)).toBeInTheDocument();
+	});
+
+	it('ArrowLeft at first block is no-op', async () => {
+		render(BlocksPage, { props: { data } });
+		const chartArea = screen.getByRole('application');
+		chartArea.focus();
+		await fireEvent.keyDown(chartArea, { key: 'ArrowLeft' });
+		expect(screen.getByText(/Block 1 of/)).toBeInTheDocument();
+	});
+
+	it('metric tab switching updates active class', async () => {
+		render(BlocksPage, { props: { data } });
+		const fogButton = screen.getByRole('button', { name: 'Fog' });
+		const mattrButton = screen.getByRole('button', { name: 'MATTR' });
+
+		// MATTR is active by default
+		expect(mattrButton.classList.contains('active')).toBe(true);
+
+		// Click Fog
+		await fireEvent.click(fogButton);
+		expect(fogButton.classList.contains('active')).toBe(true);
+		expect(mattrButton.classList.contains('active')).toBe(false);
+	});
+
+	it('renders Export PNG button', () => {
+		render(BlocksPage, { props: { data } });
+		expect(screen.getByRole('button', { name: /export chart as png/i })).toBeInTheDocument();
+	});
 });

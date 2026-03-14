@@ -1,0 +1,15 @@
+{
+  "gaps": [
+    { "start_char": 0, "end_char": 500, "word_count": 80 },
+    { "start_char": 800, "end_char": 1200, "word_count": 65 },
+    { "start_char": 1500, "end_char": 2800, "word_count": 210 },
+    { "start_char": 3000, "end_char": 3400, "word_count": 55 }
+  ],
+  "longest_silence": {
+    "word_count": 210,
+    "position": 0.3,
+    "preview": "The room was quiet for a long time. Nobody spoke. The clock ticked steadily on the wall. Rain began to fall against the windows..."
+  },
+  "avg_gap_words": 102.5,
+  "total_gaps": 4
+}

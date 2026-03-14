@@ -3,6 +3,7 @@
 	import BlockReader from '$lib/components/BlockReader.svelte';
 	import BlockMetricsPanel from '$lib/components/BlockMetricsPanel.svelte';
 	import { resolveChartColors, onThemeChange } from '$lib/utils/chart-colors';
+	import { exportChartAsPng } from '$lib/utils/chart-export';
 	import type { Block } from '$lib/types/analysis';
 	import type ChartJS from 'chart.js/auto';
 
@@ -211,6 +212,12 @@
 				onclick={() => { selectedMetric = opt.key; }}
 			>{opt.label}</button>
 		{/each}
+		<button
+			class="tab-pill export-btn"
+			onclick={() => exportChartAsPng(chart, `${selectedMetric}-blocks.png`)}
+			disabled={!chart}
+			aria-label="Export chart as PNG"
+		>Export PNG</button>
 	</div>
 
 	<!-- svelte-ignore a11y_no_noninteractive_tabindex a11y_no_noninteractive_element_interactions -->
@@ -279,6 +286,10 @@
 		background: var(--accent);
 		color: var(--bg-card);
 		border-color: var(--accent);
+	}
+
+	.export-btn {
+		margin-left: auto;
 	}
 
 	.chart-area {

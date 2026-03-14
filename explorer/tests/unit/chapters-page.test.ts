@@ -117,4 +117,44 @@ describe('Chapters page', () => {
 		const link = screen.getByRole('link', { name: '1' });
 		expect(link).toHaveAttribute('href', '/test-analysis/blocks?from=1');
 	});
+
+	it('aria-sort transitions between ascending and descending', async () => {
+		render(ChaptersPage, { props: { data } });
+		const wordsHeader = screen.getByRole('button', { name: /words/i });
+		const th = wordsHeader.closest('th')!;
+
+		// Initially none (default sort is by number, not words)
+		expect(th).toHaveAttribute('aria-sort', 'none');
+
+		// Click to sort ascending
+		await fireEvent.click(wordsHeader);
+		expect(th).toHaveAttribute('aria-sort', 'ascending');
+
+		// Click again to sort descending
+		await fireEvent.click(wordsHeader);
+		expect(th).toHaveAttribute('aria-sort', 'descending');
+	});
+
+	it('previous column loses aria-sort when different column is sorted', async () => {
+		render(ChaptersPage, { props: { data } });
+		const wordsHeader = screen.getByRole('button', { name: /words/i });
+		const fogHeader = screen.getByRole('button', { name: /fog/i });
+
+		// Sort by words first
+		await fireEvent.click(wordsHeader);
+		expect(wordsHeader.closest('th')).toHaveAttribute('aria-sort', 'ascending');
+
+		// Sort by fog — words should revert to none
+		await fireEvent.click(fogHeader);
+		expect(wordsHeader.closest('th')).toHaveAttribute('aria-sort', 'none');
+		expect(fogHeader.closest('th')).toHaveAttribute('aria-sort', 'ascending');
+	});
+
+	it('default sort has chapter number ascending', () => {
+		const { container } = render(ChaptersPage, { props: { data } });
+		// The # column header should have aria-sort="ascending" by default
+		const headers = container.querySelectorAll('th');
+		const numberHeader = headers[0]; // First column is #
+		expect(numberHeader).toHaveAttribute('aria-sort', 'ascending');
+	});
 });
